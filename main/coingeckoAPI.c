@@ -17,15 +17,15 @@
 static char *responseBuffer = NULL;
 static size_t responseLength = 0;
 
-const char *COINGECKO_API_URL = "http://api.coingecko.com/api/v3/";
-const char * API_AUTH = "x_cg_demo_api_key=CG-iUyVPGbu2nECCwVo8yXXUf57";
-const char * Ping = "ping?";
+// HTTP Event Handler to handle the response from the Coingecko API
 esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
     switch (evt->event_id) {
+        // Error handling
         case HTTP_EVENT_ERROR:
             ESP_LOGE("HTTP API", "HTTP Event Error");
             break;
             
+        // Connection established
         case HTTP_EVENT_ON_CONNECTED:
             ESP_LOGD("HTTP API", "HTTP Event Connected");
             break;
@@ -39,6 +39,7 @@ esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
                 evt->header_key, evt->header_value);
             break;
             
+        // Data received This is most important event
         case HTTP_EVENT_ON_DATA:
             // Add debug logging before processing
             ESP_LOGI("HTTP API", "Receiving data chunk of size: %d bytes", evt->data_len);
@@ -50,16 +51,18 @@ esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
                 ESP_LOGE("HTTP API", "Memory allocation failed!");
                 return ESP_ERR_NO_MEM;
             }
-            
+            // Copy the received data into the response buffer
             responseBuffer = newBuffer;
             memcpy(responseBuffer + responseLength, evt->data, evt->data_len);
             responseLength += evt->data_len;
             responseBuffer[responseLength] = '\0';
             
+            // Log the current total response length
             ESP_LOGI("HTTP API", "Current total response length: %d bytes", responseLength);
             break;
             
         case HTTP_EVENT_ON_FINISH:
+            // Log the final response length and content
             if (responseBuffer != NULL) {
                 ESP_LOGI("HTTP API", "Final response length: %d bytes", responseLength);
                 ESP_LOGI("HTTP API", "Complete response: %s", responseBuffer);
@@ -71,6 +74,7 @@ esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
                     ESP_LOGI("HTTP API", "Parsed JSON: %s", jsonStr);
                     free(jsonStr);
                     
+                    // Extract and log the "gecko_says" field This is the response from the ping API request
                     cJSON *ping = cJSON_GetObjectItem(json, "gecko_says");
                     if (ping != NULL && cJSON_IsString(ping)) {
                         ESP_LOGI("HTTP API", "Ping response: %s", ping->valuestring);
@@ -82,7 +86,7 @@ esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
                     ESP_LOGE("HTTP API", "Failed to parse JSON response");
                 }
                 
-                // Cleanup
+                // Cleanup and free the response buffer
                 free(responseBuffer);
                 responseBuffer = NULL;
                 responseLength = 0;
@@ -111,10 +115,13 @@ esp_err_t coingecko_api_ping(void)
     static int64_t lastUpdate = 0;  // Make static to persist between calls
     int64_t currentTime = esp_timer_get_time();
     
+    // Check if it's time to send the request. Limit the number of requests here
     if (((currentTime - lastUpdate)/1000000) > 30 || lastUpdate == 0)
     {
         lastUpdate = currentTime;
-        esp_http_client_config_t config = {
+        // Set up the HTTP client configuration using esp cert bndles
+        esp_http_client_config_t config =
+        {
             .url = "https://api.coingecko.com/api/v3/ping",
             .event_handler = httpEventHandler,
             .transport_type = HTTP_TRANSPORT_OVER_SSL,
@@ -142,7 +149,7 @@ esp_err_t coingecko_api_ping(void)
             return err;
         }
 
-        // Perform request (reuse the err variable instead of redeclaring it)
+        // Perform request 
         err = esp_http_client_perform(client);
         
         if (err == ESP_OK) {
