@@ -250,7 +250,8 @@ void SYSTEM_task(void * pvParameters)
         lvglUpdateDisplayMining(GLOBAL_STATE);
         lvglUpdateDisplayMonitoring(GLOBAL_STATE);
         lvglUpdateDisplayDeviceStatus(GLOBAL_STATE);
-        coingecko_api_ping();
+        // use to debug the coingecko API
+        //coingecko_api_ping();
 
         if ((xTaskGetTickCount() - last_update_time) >= pdMS_TO_TICKS(10000)) 
         {
