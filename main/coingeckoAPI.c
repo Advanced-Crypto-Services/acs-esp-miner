@@ -18,8 +18,10 @@ static char *responseBuffer = NULL;
 static size_t responseLength = 0;
 
 // HTTP Event Handler to handle the response from the Coingecko API
-esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
-    switch (evt->event_id) {
+esp_err_t httpEventHandler(esp_http_client_event_t *evt) 
+{
+    switch (evt->event_id) 
+    {
         // Error handling
         case HTTP_EVENT_ERROR:
             ESP_LOGE("HTTP API", "HTTP Event Error");
@@ -47,7 +49,8 @@ esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
             
             // Allocate or reallocate buffer
             char *newBuffer = realloc(responseBuffer, responseLength + evt->data_len + 1);
-            if (newBuffer == NULL) {
+            if (newBuffer == NULL) 
+            {
                 ESP_LOGE("HTTP API", "Memory allocation failed!");
                 return ESP_ERR_NO_MEM;
             }
@@ -63,22 +66,27 @@ esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
             
         case HTTP_EVENT_ON_FINISH:
             // Log the final response length and content
-            if (responseBuffer != NULL) {
+            if (responseBuffer != NULL) 
+            {
                 ESP_LOGI("HTTP API", "Final response length: %d bytes", responseLength);
                 ESP_LOGI("HTTP API", "Complete response: %s", responseBuffer);
                 
                 // Parse JSON response
                 cJSON *json = cJSON_Parse(responseBuffer);
-                if (json != NULL) {
+                if (json != NULL) 
+                {
                     char *jsonStr = cJSON_Print(json);
                     ESP_LOGI("HTTP API", "Parsed JSON: %s", jsonStr);
                     free(jsonStr);
                     
                     // Extract and log the "gecko_says" field This is the response from the ping API request
                     cJSON *ping = cJSON_GetObjectItem(json, "gecko_says");
-                    if (ping != NULL && cJSON_IsString(ping)) {
+                    if (ping != NULL && cJSON_IsString(ping)) 
+                    {
                         ESP_LOGI("HTTP API", "Ping response: %s", ping->valuestring);
-                    } else {
+                    } 
+                    else 
+                    {
                         ESP_LOGW("HTTP API", "No 'gecko_says' field found in response");
                     }
                     cJSON_Delete(json);
@@ -95,7 +103,8 @@ esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
             
         case HTTP_EVENT_DISCONNECTED:
             ESP_LOGD("HTTP API", "HTTP Event Disconnected");
-            if (responseBuffer != NULL) {
+            if (responseBuffer != NULL) 
+            {
                 free(responseBuffer);
                 responseBuffer = NULL;
                 responseLength = 0;
@@ -112,7 +121,7 @@ esp_err_t httpEventHandler(esp_http_client_event_t *evt) {
 
 esp_err_t coingecko_api_ping(void)
 {
-    static int64_t lastUpdate = 0;  // Make static to persist between calls
+    static int64_t lastUpdate = 0;  
     int64_t currentTime = esp_timer_get_time();
     
     // Check if it's time to send the request. Limit the number of requests here
@@ -120,6 +129,8 @@ esp_err_t coingecko_api_ping(void)
     {
         lastUpdate = currentTime;
         // Set up the HTTP client configuration using esp cert bndles
+        //Using Coingecko API key for testing
+        // TODO: move this to own server for production to limit the number of requests
         esp_http_client_config_t config =
         {
             .url = "https://api.coingecko.com/api/v3/ping",
@@ -130,20 +141,23 @@ esp_err_t coingecko_api_ping(void)
 
         // Initialize client
         esp_http_client_handle_t client = esp_http_client_init(&config);
-        if (client == NULL) {
+        if (client == NULL) 
+        {
             ESP_LOGE("HTTP API", "Failed to initialize HTTP client");
             return ESP_FAIL;
         }
 
         // Set headers with error checking
         esp_err_t err;
-        if ((err = esp_http_client_set_header(client, "accept", "application/json")) != ESP_OK) {
+        if ((err = esp_http_client_set_header(client, "accept", "application/json")) != ESP_OK) 
+        {
             ESP_LOGE("HTTP API", "Failed to set accept header: %s", esp_err_to_name(err));
             esp_http_client_cleanup(client);
             return err;
         }
 
-        if ((err = esp_http_client_set_header(client, "x-cg-demo-api-key", "CG-iUyVPGbu2nECCwVo8yXXUf57")) != ESP_OK) {
+        if ((err = esp_http_client_set_header(client, "x-cg-demo-api-key", "CG-iUyVPGbu2nECCwVo8yXXUf57")) != ESP_OK) 
+        {
             ESP_LOGE("HTTP API", "Failed to set API key header: %s", esp_err_to_name(err));
             esp_http_client_cleanup(client);
             return err;
@@ -152,9 +166,12 @@ esp_err_t coingecko_api_ping(void)
         // Perform request 
         err = esp_http_client_perform(client);
         
-        if (err == ESP_OK) {
+        if (err == ESP_OK) 
+        {
             ESP_LOGI("HTTP API", "HTTP GET Status = %d", esp_http_client_get_status_code(client));
-        } else {
+        } 
+        else 
+        {
             ESP_LOGE("HTTP API", "HTTP GET request failed: %s", esp_err_to_name(err));
         }
         
