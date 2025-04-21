@@ -277,10 +277,10 @@ void stratum_task(void * pvParameters)
 
         ///// Start Stratum Action
         // mining.subscribe - ID: 1
-        STRATUM_V1_subscribe(GLOBAL_STATE->sock, GLOBAL_STATE->asic_model_str);
+        STRATUM_V1_subscribe(GLOBAL_STATE->sock, GLOBAL_STATE->send_uid++, GLOBAL_STATE->asic_model_str);
 
         // mining.configure - ID: 2
-        STRATUM_V1_configure_version_rolling(GLOBAL_STATE->sock, &GLOBAL_STATE->version_mask);
+        STRATUM_V1_configure_version_rolling(GLOBAL_STATE->sock, GLOBAL_STATE->send_uid++, &GLOBAL_STATE->version_mask);
 
         char * username = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? nvs_config_get_string(NVS_CONFIG_FALLBACK_STRATUM_USER, FALLBACK_STRATUM_USER) : nvs_config_get_string(NVS_CONFIG_STRATUM_USER, STRATUM_USER);
         char * password = GLOBAL_STATE->SYSTEM_MODULE.is_using_fallback ? nvs_config_get_string(NVS_CONFIG_FALLBACK_STRATUM_PASS, FALLBACK_STRATUM_PW) : nvs_config_get_string(NVS_CONFIG_STRATUM_PASS, STRATUM_PW);

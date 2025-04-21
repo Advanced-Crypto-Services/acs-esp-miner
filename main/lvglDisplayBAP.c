@@ -323,17 +323,6 @@ esp_err_t lvglUpdateDisplayMonitoringBAP(GlobalState *GLOBAL_STATE)
     esp_err_t ret;
 
     // LVGL_REG_TEMPS (0x40)
-    // Send all chip temperatures and average
-    size_t tempDataSize = (GLOBAL_STATE->asic_count * sizeof(float)) + sizeof(float);
-    if (tempDataSize + 2 > MAX_BUFFER_SIZE_BAP) return ESP_ERR_NO_MEM;
-    float tempData[GLOBAL_STATE->asic_count + 1];
-    for (int i = 0; i < GLOBAL_STATE->asic_count; i++) {
-        tempData[i] = power->chip_temp[i];
-    }
-    tempData[GLOBAL_STATE->asic_count] = power->chip_temp_avg;
-    
-    ret = sendRegisterDataBAP(LVGL_REG_TEMPS, tempData, tempDataSize);
-    if (ret != ESP_OK) return ret;
 
     // LVGL_REG_ASIC_FREQ (0x41)
     if (sizeof(float) + 2 > MAX_BUFFER_SIZE_BAP) return ESP_ERR_NO_MEM;
@@ -361,14 +350,7 @@ esp_err_t lvglUpdateDisplayMonitoringBAP(GlobalState *GLOBAL_STATE)
     ESP_LOGI("LVGL", "Sending power stats: %.2f %.2f %.2f %.2f", powerStats[0], powerStats[1], powerStats[2], powerStats[3]);
     if (ret != ESP_OK) return ret;
 
-    // LVGL_REG_ASIC_INFO (0x44)
-    if (sizeof(uint16_t) * 2 + 2 > MAX_BUFFER_SIZE_BAP) return ESP_ERR_NO_MEM;
-    uint16_t asicInfo[2] = {
-        GLOBAL_STATE->asic_count,      // ASIC Count
-        //power->vr_temp  // VR Temperature
-    };
-    ret = sendRegisterDataBAP(LVGL_REG_ASIC_INFO, asicInfo, sizeof(uint16_t) * 2);
-    if (ret != ESP_OK) return ret;
+
 
     // LVGL_REG_UPTIME (0x45)
     if (sizeof(uint32_t) + 2 > MAX_BUFFER_SIZE_BAP) return ESP_ERR_NO_MEM;
