@@ -1,10 +1,7 @@
 idf_component_register(
 SRCS
     "adc.c"
-    "DS4432U.c"
-    "EMC2101.c"
     "i2c_bitaxe.c"
-    "INA260.c"
     "main.c"
     "nvs_config.c"
     "display.c"
@@ -12,8 +9,6 @@ SRCS
     "input.c"
     "lvglDisplay.c"
     "system.c"
-    "TPS546.c"
-    "vcore.c"
     "work_queue.c"
     "nvs_device.c"
     "lv_font_portfolio-6x8.c"
@@ -28,6 +23,15 @@ SRCS
     "./tasks/asic_task.c"
     "./tasks/asic_result_task.c"
     "./tasks/power_management_task.c"
+    "./thermal/EMC2101.c"
+    "./thermal/EMC2103.c"
+    "./thermal/TMP1075.c"
+    "./thermal/thermal.c"
+    "./power/TPS546.c"
+    "./power/DS4432U.c"
+    "./power/INA260.c"
+    "./power/power.c"
+    "./power/vcore.c"
 
 INCLUDE_DIRS
     "."
@@ -38,6 +42,8 @@ INCLUDE_DIRS
     "../components/connect/include"
     "../components/dns_server/include"
     "../components/stratum/include"
+    "thermal"
+    "power"
 
 PRIV_REQUIRES
     "app_update"
@@ -58,6 +64,8 @@ PRIV_REQUIRES
     "esp_http_client"
     "mbedtls"
     
+
+EMBED_FILES "http_server/recovery_page.html"
 )
 
 idf_build_set_property(COMPILE_OPTIONS "-DLV_CONF_INCLUDE_SIMPLE=1" APPEND)
