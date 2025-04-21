@@ -14,7 +14,6 @@
 
 #include "driver/gpio.h"
 #include "esp_app_desc.h"
-#include "esp_netif.h"
 #include "esp_timer.h"
 #include "esp_wifi.h"
 #include "lwip/inet.h"
@@ -96,12 +95,6 @@ void SYSTEM_init_system(GlobalState * GLOBAL_STATE)
     // set the best diff string
     _suffix_string(module->best_nonce_diff, module->best_diff_string, DIFF_STRING_SIZE, 0);
     _suffix_string(module->best_session_nonce_diff, module->best_session_diff_string, DIFF_STRING_SIZE, 0);
-
-    // set the ssid string to blank
-    memset(module->ssid, 0, sizeof(module->ssid));
-
-    // set the wifi_status to blank
-    memset(module->wifi_status, 0, 20);
 }
 
 esp_err_t SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
@@ -112,7 +105,7 @@ esp_err_t SYSTEM_init_peripherals(GlobalState * GLOBAL_STATE) {
     ESP_RETURN_ON_ERROR(VCORE_init(GLOBAL_STATE), TAG, "VCORE init failed!");
     ESP_RETURN_ON_ERROR(VCORE_set_voltage(nvs_config_get_u16(NVS_CONFIG_ASIC_VOLTAGE, CONFIG_ASIC_VOLTAGE) / 1000.0, GLOBAL_STATE), TAG, "VCORE set voltage failed!");
 
-    ESP_RETURN_ON_ERROR(Thermal_init(GLOBAL_STATE->device_model, nvs_config_get_u16(NVS_CONFIG_INVERT_FAN_POLARITY, 1)), TAG, "Thermal init failed!");
+    ESP_RETURN_ON_ERROR(Thermal_init(GLOBAL_STATE->device_model), TAG, "Thermal init failed!");
 
     vTaskDelay(500 / portTICK_PERIOD_MS);
 
@@ -365,6 +358,12 @@ static void _check_for_best_diff(GlobalState * GLOBAL_STATE, double diff, uint8_
         _suffix_string((uint64_t) diff, module->best_session_diff_string, DIFF_STRING_SIZE, 0);
     }
 
+    double network_diff = _calculate_network_difficulty(GLOBAL_STATE->ASIC_TASK_MODULE.active_jobs[job_id]->target);
+    if (diff > network_diff) {
+        module->FOUND_BLOCK = true;
+        ESP_LOGI(TAG, "FOUND BLOCK!!!!!!!!!!!!!!!!!!!!!! %f > %f", diff, network_diff);
+    }
+
     if ((uint64_t) diff <= module->best_nonce_diff) {
         return;
     }
@@ -375,11 +374,6 @@ static void _check_for_best_diff(GlobalState * GLOBAL_STATE, double diff, uint8_
     // make the best_nonce_diff into a string
     _suffix_string((uint64_t) diff, module->best_diff_string, DIFF_STRING_SIZE, 0);
 
-    double network_diff = _calculate_network_difficulty(GLOBAL_STATE->ASIC_TASK_MODULE.active_jobs[job_id]->target);
-    if (diff > network_diff) {
-        module->FOUND_BLOCK = true;
-        ESP_LOGI(TAG, "FOUND BLOCK!!!!!!!!!!!!!!!!!!!!!! %f > %f", diff, network_diff);
-    }
     ESP_LOGI(TAG, "Network diff: %f", network_diff);
 }
 
