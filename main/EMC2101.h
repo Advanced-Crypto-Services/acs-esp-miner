@@ -85,6 +85,7 @@
 #define EMC2101_INTERNAL_TEMP 0x00     ///< The internal temperature register
 #define EMC2101_EXTERNAL_TEMP_MSB 0x01 ///< high byte for the external temperature reading
 #define EMC2101_EXTERNAL_TEMP_LSB 0x10 ///< low byte for the external temperature reading
+#define EMC2101_TEMP_FILTER 0xBF       // Diode temp Filter register
 #define EMC2101_TEMP_FAULT_OPEN_CIRCUIT 0x3F8
 #define EMC2101_TEMP_FAULT_SHORT 0x3FF
 

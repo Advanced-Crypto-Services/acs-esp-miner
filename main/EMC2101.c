@@ -30,8 +30,8 @@ esp_err_t EMC2101_init(bool invertPolarity) {
 
 
     // We're using default filtering and conversion, no need to set them again.
-    // //set filtering
-    // ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2101_dev_handle, EMC2101_TEMP_FILTER, EMC2101_DEFAULT_FILTER));
+     //set filtering
+    ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2101_dev_handle, EMC2101_TEMP_FILTER, EMC2101_FILTER_1));
 
     // //set conversion rate
     // ESP_ERROR_CHECK(i2c_bitaxe_register_write_byte(emc2101_dev_handle, EMC2101_REG_DATA_RATE, EMC2101_DEFAULT_DATARATE));
