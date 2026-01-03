@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include "power_management_calc.h"
 
 #ifdef __cplusplus

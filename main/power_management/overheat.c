@@ -306,9 +306,6 @@ void overheat_execute_recovery(pm_overheat_severity_t severity,
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-/* Forward declaration for GPIO - defined in power_management_task.c */
-extern void gpio_set_level(int gpio, int level);
-
 static void default_set_fan_speed(float speed)
 {
     EMC2101_set_fan_speed(speed);
