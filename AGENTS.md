@@ -1,4 +1,4 @@
-# CLAUDE.md - AI Agent Guide for ACS ESP-Miner
+# AI Agent Guide for ACS ESP-Miner
 
 ## Project Overview
 
@@ -325,3 +325,23 @@ This codebase is undergoing refactoring to improve:
 4. **Clean Code** - Smaller functions, better naming, DI
 
 See implementation plan for detailed phased approach.
+
+## Factory AI Droids
+
+| Droid                        | Purpose                          |
+| ---------------------------- | -------------------------------- |
+| `@task-coordinator`          | Multi-step task orchestration    |
+| `@issue-implementer`         | Full issue implementation        |
+| `@deep-analyzer`             | Complex problem analysis         |
+| `@code-reviewer`             | Code review                      |
+| `@bug-triage`                | Bug analysis                     |
+| `@bug-fix`                   | Bug fix implementation           |
+| `@security-sweeper`          | Security audits                  |
+| `@embedded-security-sweeper` | Embedded-specific security audit |
+
+## Commands
+
+| Command         | Description                      |
+| --------------- | -------------------------------- |
+| `/create-pr`    | Create PR with pre-flight checks |
+| `/pre-pr-check` | Run all quality checks           |

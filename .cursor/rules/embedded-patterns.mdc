@@ -1,0 +1,28 @@
+---
+globs: "**/*.c,**/*.h"
+description: Embedded C patterns and safety rules
+---
+# Embedded C Patterns
+
+## Volatile Usage
+Use `volatile` for:
+- Memory-mapped registers
+- Variables shared with ISRs
+- Variables modified by DMA
+
+## ISR Rules
+1. Keep ISRs SHORT
+2. No printf/malloc/blocking calls
+3. Clear interrupt flags appropriately
+4. Use `volatile` for shared variables
+
+## Defensive Programming
+```c
+if (ptr == NULL) return ERR_INVALID_PARAM;
+if (index >= ARRAY_SIZE) return ERR_OUT_OF_RANGE;
+
+uint32_t start = get_tick();
+while (!(REG & FLAG)) {
+    if (get_tick() - start > TIMEOUT_MS) return ERR_TIMEOUT;
+}
+```

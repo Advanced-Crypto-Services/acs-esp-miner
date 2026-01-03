@@ -5,7 +5,6 @@
 **ACS ESP-Miner** is an ESP32-S3 based Bitcoin mining device firmware (Bitaxe fork). It controls ASIC mining chips, manages power/thermal systems, communicates with mining pools via Stratum protocol, and provides a web interface for monitoring and configuration.
 
 ### Target Hardware
-
 - **MCU**: ESP32-S3 (dual-core Xtensa @ 240MHz)
 - **RAM**: 512KB SRAM + 8MB external PSRAM
 - **Flash**: 16MB
@@ -15,7 +14,6 @@
 ## Build System
 
 ### Prerequisites
-
 - ESP-IDF v5.4.0 or later
 - Node.js (for web UI builds)
 
@@ -43,7 +41,6 @@ cd test && idf.py build
 ```
 
 ### Build Artifacts
-
 - Firmware: `build/esp-miner.bin`
 - Merged binary: `esp-miner-merged.bin`
 - Web UI: `main/http_server/acs-os/dist/`
@@ -70,14 +67,14 @@ cd test && idf.py build
 
 ### FreeRTOS Tasks
 
-| Task             | File                            | Priority | Purpose                                                 |
-| ---------------- | ------------------------------- | -------- | ------------------------------------------------------- |
-| POWER_MANAGEMENT | `tasks/power_management_task.c` | 10       | Thermal management, voltage/frequency control, autotune |
-| SYSTEM           | `system.c`                      | 3        | UI updates, monitoring                                  |
-| STRATUM          | `tasks/stratum_task.c`          | -        | Pool communication                                      |
-| ASIC             | `tasks/asic_task.c`             | -        | Work transmission to ASICs                              |
-| ASIC_RESULT      | `tasks/asic_result_task.c`      | -        | Result collection from ASICs                            |
-| CREATE_JOBS      | `tasks/create_jobs_task.c`      | -        | Mining job queue management                             |
+| Task | File | Priority | Purpose |
+|------|------|----------|---------|
+| POWER_MANAGEMENT | `tasks/power_management_task.c` | 10 | Thermal management, voltage/frequency control, autotune |
+| SYSTEM | `system.c` | 3 | UI updates, monitoring |
+| STRATUM | `tasks/stratum_task.c` | - | Pool communication |
+| ASIC | `tasks/asic_task.c` | - | Work transmission to ASICs |
+| ASIC_RESULT | `tasks/asic_result_task.c` | - | Result collection from ASICs |
+| CREATE_JOBS | `tasks/create_jobs_task.c` | - | Mining job queue management |
 
 ### Global State (IMPORTANT)
 
@@ -105,25 +102,23 @@ typedef struct {
 
 ### Module Boundaries
 
-| Module            | Header                                     | Source                                     | Dependencies                               |
-| ----------------- | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
-| Power Management  | `power_management_task.h`                  | `tasks/power_management_task.c`            | EMC2101, INA260, TPS546, nvs_config, vcore |
-| Power Calc (Pure) | `power_management/power_management_calc.h` | `power_management/power_management_calc.c` | None (testable)                            |
-| Autotune State    | `power_management/autotune_state.h`        | `power_management/autotune_state.c`        | FreeRTOS semphr                            |
-| Database          | `database/dataBase.h`                      | `database/dataBase.c`                      | SPIFFS, cJSON                              |
-| BAP Display       | `lvglDisplayBAP.h`                         | `lvglDisplayBAP.c`                         | UART, nvs_config, GlobalState              |
-| HTTP API          | `http_server/http_server.h`                | `http_server/http_server.c`                | esp_http_server, GlobalState               |
+| Module | Header | Source | Dependencies |
+|--------|--------|--------|--------------|
+| Power Management | `power_management_task.h` | `tasks/power_management_task.c` | EMC2101, INA260, TPS546, nvs_config, vcore |
+| Power Calc (Pure) | `power_management/power_management_calc.h` | `power_management/power_management_calc.c` | None (testable) |
+| Autotune State | `power_management/autotune_state.h` | `power_management/autotune_state.c` | FreeRTOS semphr |
+| Database | `database/dataBase.h` | `database/dataBase.c` | SPIFFS, cJSON |
+| BAP Display | `lvglDisplayBAP.h` | `lvglDisplayBAP.c` | UART, nvs_config, GlobalState |
+| HTTP API | `http_server/http_server.h` | `http_server/http_server.c` | esp_http_server, GlobalState |
 
 ## Testing
 
 ### Current Test Infrastructure
-
 - **Framework**: Unity (ESP-IDF integrated)
 - **Location**: `components/*/test/` and `test/`
 - **Existing Tests**: ~614 lines covering stratum/mining protocol
 
 ### Running Tests (Target-Based)
-
 ```bash
 cd test
 idf.py build
@@ -133,7 +128,6 @@ idf.py -p /dev/ttyACM0 monitor
 ```
 
 ### Adding Tests (Current Pattern)
-
 1. Create `components/<name>/test/test_<name>.c`
 2. Add to `test/CMakeLists.txt`: `TEST_COMPONENTS`
 3. Use Unity macros: `TEST_CASE("description", "[tag]")`
@@ -152,13 +146,11 @@ cmake -B build && cmake --build build && ./build/run_tests
 ```
 
 **Test Modules**:
-
 - `test_infrastructure.c` - Validates mock/stub infrastructure (17 tests)
 - `test_power_management_calc.c` - Pure calculation functions (34 tests)
 - `test_autotune_state.c` - Thread-safe state wrapper (18 tests)
 
 **Infrastructure**:
-
 - `stubs/` - ESP-IDF type stubs (esp_err, esp_log, esp_timer, freertos)
 - `mocks/` - Controllable implementations (mock_nvs with write tracking)
 - `fakes/` - Deterministic implementations (fake_time)
@@ -166,7 +158,6 @@ cmake -B build && cmake --build build && ./build/run_tests
 ## Code Patterns
 
 ### ESP-IDF Conventions
-
 ```c
 // Logging
 static const char *TAG = "module_name";
@@ -186,9 +177,7 @@ nvs_config_set_u16(NVS_CONFIG_KEY, new_value);
 ```
 
 ### Hardware Abstraction
-
 Sensor drivers use a flat function API (not OOP):
-
 ```c
 // EMC2101 - Temperature/Fan control
 float temp = EMC2101_get_external_temp();
@@ -204,31 +193,25 @@ float iout = TPS546_get_iout();
 ```
 
 ### BAP Protocol (Bitaxe Access Port)
-
 Serial protocol for external display communication:
-
 ```
 Packet: [0xFF][0xAA][REG][LEN][DATA...][CRC16_HI][CRC16_LO]
 ```
-
 - Registers defined in `lvglDisplayBAP.h` (0x21-0xF1)
 - CRC16-CCITT polynomial 0x1021
 
 ## Known Issues & Technical Debt
 
 ### Critical
-
 1. **Race Condition in Autotune**: ~~Multiple tasks access `GlobalState` module structs without proper synchronization~~ **FIXED** in Phase 1.2 - Autotune now uses thread-safe `autotune_state.h` wrapper and pure calculation functions
 2. **Global State Coupling**: All modules depend on monolithic `GlobalState`
 
 ### High Priority
-
-1. **Logging fragmentation**: Uses ESP_LOG\* but no unified logging to WebUI/Screen/Database
+1. **Logging fragmentation**: Uses ESP_LOG* but no unified logging to WebUI/Screen/Database
 2. **BAP code complexity**: Large switch statements with byte manipulation
 3. **Code duplication**: Overheat handling repeated for each device type
 
 ### Medium Priority
-
 1. **Limited test coverage**: ~614 lines of tests for ~10K lines of code
 2. **No host-based tests**: All tests require flashing to hardware
 3. **Function length**: Many functions exceed 100 lines (Clean Code violation)
@@ -236,9 +219,7 @@ Packet: [0xFF][0xAA][REG][LEN][DATA...][CRC16_HI][CRC16_LO]
 ## Configuration
 
 ### NVS Keys (Non-Volatile Storage)
-
 Key constants in `nvs_config.h`:
-
 - `NVS_CONFIG_ASIC_VOLTAGE` - Core voltage in mV
 - `NVS_CONFIG_ASIC_FREQ` - Frequency in MHz
 - `NVS_CONFIG_FAN_SPEED` - Manual fan speed %
@@ -247,9 +228,7 @@ Key constants in `nvs_config.h`:
 - `NVS_CONFIG_STRATUM_URL` - Mining pool URL
 
 ### Kconfig Options
-
 Located in `main/Kconfig.projbuild`:
-
 - GPIO pin assignments
 - Default ASIC voltage/frequency
 - Stratum server defaults
@@ -257,20 +236,17 @@ Located in `main/Kconfig.projbuild`:
 ## API Reference
 
 ### REST Endpoints (main/http_server/APIreadme.md)
-
 - `GET /api/system/info` - Mining statistics
 - `PATCH /api/system` - Update configuration
 - `GET /api/swarm/info` - Multi-device status
 - `POST /api/system/restart` - Reboot device
 
 ### WebSocket
-
 - Real-time updates on `/ws`
 
 ## Guidelines for AI Agents
 
 ### DO
-
 - Read existing code before modifying
 - Follow ESP-IDF error handling patterns
 - Add tests for new functionality
@@ -279,7 +255,6 @@ Located in `main/Kconfig.projbuild`:
 - Use meaningful variable names
 
 ### DON'T
-
 - Modify `GlobalState` structure without planning migration
 - Add new global variables
 - Skip error checking on ESP-IDF calls
@@ -287,7 +262,6 @@ Located in `main/Kconfig.projbuild`:
 - Use blocking delays in tasks (use `vTaskDelay`)
 
 ### When Adding Features
-
 1. Check if similar functionality exists
 2. Identify which module owns the feature
 3. Consider thread safety (FreeRTOS tasks)
@@ -295,7 +269,6 @@ Located in `main/Kconfig.projbuild`:
 5. Update API documentation if adding endpoints
 
 ### When Fixing Bugs
-
 1. Reproduce with serial monitor (`idf.py monitor`)
 2. Check task stack sizes if crashes occur
 3. Verify mutex usage for shared state
@@ -303,22 +276,21 @@ Located in `main/Kconfig.projbuild`:
 
 ## File Quick Reference
 
-| Purpose                  | File                                 |
-| ------------------------ | ------------------------------------ |
-| Entry point              | `main/main.c`                        |
-| Global state definition  | `main/global_state.h`                |
+| Purpose | File |
+|---------|------|
+| Entry point | `main/main.c` |
+| Global state definition | `main/global_state.h` |
 | Power/thermal management | `main/tasks/power_management_task.c` |
-| Mining protocol          | `components/stratum/mining.c`        |
-| REST API                 | `main/http_server/http_server.c`     |
-| Database/logging         | `main/database/dataBase.c`           |
-| Display protocol         | `main/lvglDisplayBAP.c`              |
-| NVS configuration        | `main/nvs_config.c`                  |
-| ASIC drivers             | `components/asic/bm1370.c` (etc.)    |
+| Mining protocol | `components/stratum/mining.c` |
+| REST API | `main/http_server/http_server.c` |
+| Database/logging | `main/database/dataBase.c` |
+| Display protocol | `main/lvglDisplayBAP.c` |
+| NVS configuration | `main/nvs_config.c` |
+| ASIC drivers | `components/asic/bm1370.c` (etc.) |
 
 ## Refactoring Roadmap (In Progress)
 
 This codebase is undergoing refactoring to improve:
-
 1. **Testability** - Host-based unit tests with mocking
 2. **Modularity** - Extract state from GlobalState into modules
 3. **Thread Safety** - Proper synchronization for shared state

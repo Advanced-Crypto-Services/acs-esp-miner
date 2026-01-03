@@ -28,3 +28,9 @@ managed_components/*
 
 # macOS
 **/.DS_Store
+
+# AI Agent Files
+.factory/personal/
+.cursor/debug.log
+.cursor/worktrees.json
+.claude/settings.local.json
