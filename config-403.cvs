@@ -1,8 +1,8 @@
 key,type,encoding,value
 main,namespace,,
 hostname,data,string,acsbitaxe
-wifissid,data,string,Bitaxe
-wifipass,data,string,satoshi256
+wifissid,data,string,bitaxe-test
+wifipass,data,string,bu11dogs
 stratumurl,data,string,public-pool.io
 stratumport,data,u16,21496
 stratumuser,data,string,bc1qa2500jc3cwjnklv4tdme4e6ascvvl5w8jezxlh.bitaxe
@@ -11,8 +11,8 @@ fbstratumurl,data,string,solo.ckpool.org
 fbstratumport,data,u16,3333
 fbstratumuser,data,string,bc1qa2500jc3cwjnklv4tdme4e6ascvvl5w8jezxlh.bitaxe
 fbstratumpass,data,string,x
-asicfrequency,data,u16,575
-asicvoltage,data,u16,1200
+asicfrequency,data,u16,400
+asicvoltage,data,u16,1150
 asicmodel,data,string,BM1368
 devicemodel,data,string,supra
 boardversion,data,string,403
@@ -20,7 +20,7 @@ flipscreen,data,u16,1
 invertfanpol,data,u16,1
 autofanspeed,data,u16,0
 fanspeed,data,u16,30
-selftest,data,u16,1
+selftest,data,u16,0
 overheat_mode,data,u16,0
 serialnumber,data,string,MAC123451370
 builddate,data,string,06052025

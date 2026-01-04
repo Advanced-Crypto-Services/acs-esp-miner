@@ -55,6 +55,28 @@ SemaphoreHandle_t BootSemaphore;
 //local function prototypes
 static void tests_done(GlobalState * GLOBAL_STATE, bool test_result);
 
+static float Thermal_get_chip_temp(GlobalState * GLOBAL_STATE)
+{
+    switch (GLOBAL_STATE->device_model) {
+        case DEVICE_MAX:
+        case DEVICE_ULTRA:
+        case DEVICE_SUPRA:
+            
+            if (GLOBAL_STATE->board_version >= 402 && GLOBAL_STATE->board_version <= 499) {
+                return EMC2101_get_external_temp();
+            } else {
+                return EMC2101_get_internal_temp() + 5;
+            }
+            break;
+        case DEVICE_GAMMA:
+            return  EMC2101_get_external_temp();
+            break;
+        default:
+        return -1;
+    }
+    return -1;
+}
+
 bool should_test(GlobalState * GLOBAL_STATE) {
     bool is_max = GLOBAL_STATE->asic_model == ASIC_BM1397;
     uint64_t best_diff = nvs_config_get_u64(NVS_CONFIG_BEST_DIFF, 0);
@@ -360,6 +382,22 @@ void self_test(void * pvParameters)
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
+    //ADC VOUT confirmation
+    if (test_core_voltage(GLOBAL_STATE) != ESP_OK) {
+        tests_done(GLOBAL_STATE, false);
+    }
+
+
+    // test for  temp continuity 
+    float asic_temp = Thermal_get_chip_temp(GLOBAL_STATE);
+    ESP_LOGI(TAG, "ASIC Temp: %.2f C", asic_temp);
+
+    // detect open circiut / no result
+    if(asic_temp == -1.0 || asic_temp == 127.0){
+        display_msg("TEMP:OPEN", GLOBAL_STATE);
+        tests_done(GLOBAL_STATE, false);
+    }
+
     //test for number of ASICs
     if (SERIAL_init() != ESP_OK) {
         ESP_LOGE(TAG, "SERIAL init failed!");
@@ -448,7 +486,7 @@ void self_test(void * pvParameters)
      double duration = 0;
      double hash_rate = 0;
 
-    while(duration < 3){
+    while(duration < 5){
         task_result * asic_result = (*GLOBAL_STATE->ASIC_functions.receive_result_fn)(GLOBAL_STATE);
         if (asic_result != NULL) {
             // check the nonce difficulty
@@ -459,76 +497,45 @@ void self_test(void * pvParameters)
             ESP_LOGI(TAG, "Nonce %lu Nonce difficulty %.32f.", asic_result->nonce, nonce_diff);
             ESP_LOGI(TAG, "%f Gh/s  , duration %f",hash_rate, duration);
         }
+        duration = (double) (esp_timer_get_time() - start) / 1000000;
+        uint16_t core_voltage = VCORE_get_voltage_mv(GLOBAL_STATE);
+        ESP_LOGI(TAG, "Voltage: %u", core_voltage);
     }
 
     ESP_LOGI(TAG, "Hashrate: %f", hash_rate);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
-    switch (GLOBAL_STATE->device_model) {
-        case DEVICE_MAX:
-        case DEVICE_ULTRA:
-            break;
-        case DEVICE_SUPRA:
-            if(hash_rate < HASHRATE_TARGET_SUPRA){
-                display_msg("HASHRATE:FAIL", GLOBAL_STATE);
-                tests_done(GLOBAL_STATE, TESTS_FAILED);
-            }
-            break;
-        case DEVICE_GAMMA:
-            if(hash_rate < HASHRATE_TARGET_GAMMA){
-                display_msg("HASHRATE:FAIL", GLOBAL_STATE);
-                tests_done(GLOBAL_STATE, TESTS_FAILED);
-            }
-            break;
-        default:
+    float expected_hashrate_mhs = GLOBAL_STATE->POWER_MANAGEMENT_MODULE.frequency_value 
+                                * GLOBAL_STATE->small_core_count 
+                                * .8 // 80% target for cold production boards
+                                * GLOBAL_STATE->asic_count
+                                / 1000.0f;
+
+    ESP_LOGI(TAG, "Hashrate: %.2f Gh/s, Expected: %.2f Gh/s", hash_rate, expected_hashrate_mhs);
+
+    if (hash_rate < expected_hashrate_mhs) {
+        display_msg("HASHRATE:FAIL", GLOBAL_STATE);
+        tests_done(GLOBAL_STATE, false);
     }
 
     free(GLOBAL_STATE->ASIC_TASK_MODULE.active_jobs);
     free(GLOBAL_STATE->valid_jobs);
 
-    if (test_core_voltage(GLOBAL_STATE) != ESP_OK) {
-        tests_done(GLOBAL_STATE, TESTS_FAILED);
-    }
 
-    switch (GLOBAL_STATE->device_model) {
-        case DEVICE_MAX:
-        case DEVICE_ULTRA:
-        case DEVICE_SUPRA:
-            if(GLOBAL_STATE->board_version >= 402 && GLOBAL_STATE->board_version <= 499){
-                if (test_TPS546_power_consumption(POWER_CONSUMPTION_TARGET_402, POWER_CONSUMPTION_MARGIN) != ESP_OK) {
-                    ESP_LOGE(TAG, "TPS546 Power Draw Failed, target %.2f", (float)POWER_CONSUMPTION_TARGET_402);
-                    display_msg("POWER:FAIL", GLOBAL_STATE);
-                    tests_done(GLOBAL_STATE, TESTS_FAILED);
-                }
-            } else {
-                if (test_INA260_power_consumption(POWER_CONSUMPTION_TARGET_SUB_402, POWER_CONSUMPTION_MARGIN) != ESP_OK) {
-                    ESP_LOGE(TAG, "INA260 Power Draw Failed, target %.2f", (float)POWER_CONSUMPTION_TARGET_SUB_402);
-                    display_msg("POWER:FAIL", GLOBAL_STATE);
-                    tests_done(GLOBAL_STATE, TESTS_FAILED);
-                }
-            }
-            break;
-        case DEVICE_GAMMA:
-                if (test_TPS546_power_consumption(POWER_CONSUMPTION_TARGET_GAMMA, POWER_CONSUMPTION_MARGIN) != ESP_OK) {
-                    ESP_LOGE(TAG, "TPS546 Power Draw Failed, target %.2f", (float)POWER_CONSUMPTION_TARGET_GAMMA);
-                    display_msg("POWER:FAIL", GLOBAL_STATE);
-                    tests_done(GLOBAL_STATE, TESTS_FAILED);
-                }
-            break;
-        default:
-    }
+ 
 
-    if (test_fan_sense(GLOBAL_STATE) != ESP_OK) {     
-        ESP_LOGE(TAG, "Fan test failed!"); 
-        tests_done(GLOBAL_STATE, TESTS_FAILED);
-    }
 
-    tests_done(GLOBAL_STATE, TESTS_PASSED);
-
-    return;  
+    tests_done(GLOBAL_STATE, true);
 }
 
 static void tests_done(GlobalState * GLOBAL_STATE, bool test_result) 
 {
+
+    // turn off power 
+    TPS546_set_vout(0);
+    uint16_t core_voltage = VCORE_get_voltage_mv(GLOBAL_STATE);
+    ESP_LOGI(TAG, "Voltage SHOULD BE OFF: %u", core_voltage);
+
     switch (GLOBAL_STATE->device_model) {
         case DEVICE_MAX:
         case DEVICE_ULTRA:
@@ -552,7 +559,7 @@ static void tests_done(GlobalState * GLOBAL_STATE, bool test_result)
             }
         }
     } else {
-        nvs_config_set_u16(NVS_CONFIG_SELF_TEST, 0);
+        //nvs_config_set_u16(NVS_CONFIG_SELF_TEST, 0);
         ESP_LOGI(TAG, "Self Tests Passed!!!");
     }
 

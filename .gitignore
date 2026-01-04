@@ -6,6 +6,8 @@ dependencies.lock
 # Visual Studio Code
 .vscode/*
 .history/*
+.cursor/*
+.clangd/*
 
 # Production folder
 build/

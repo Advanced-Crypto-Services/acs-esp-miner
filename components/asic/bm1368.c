@@ -59,7 +59,7 @@ typedef struct __attribute__((__packed__))
 
 static const char * TAG = "bm1368Module";
 
-static uint8_t asic_response_buffer[CHUNK_SIZE];
+static uint8_t asic_response_buffer[SERIAL_BUF_SIZE];
 static task_result result;
 
 static float current_frequency = 56.25;
@@ -241,7 +241,7 @@ uint8_t BM1368_init(uint64_t frequency, uint16_t asic_count)
 {
     ESP_LOGI(TAG, "Initializing BM1368");
 
-    memset(asic_response_buffer, 0, CHUNK_SIZE);
+    memset(asic_response_buffer, 0, SERIAL_BUF_SIZE);
 
     esp_rom_gpio_pad_select_gpio(GPIO_ASIC_RESET);
     gpio_set_direction(GPIO_ASIC_RESET, GPIO_MODE_OUTPUT);
