@@ -206,6 +206,8 @@ void SYSTEM_task(void * pvParameters)
     TickType_t last_update_time = xTaskGetTickCount();
     
     while (1) {
+        // small task pause
+        vTaskDelay(200 / portTICK_PERIOD_MS);
         // Check for overheat mode
         #if LVGL_MODE_BAP == 1
             SERIAL_rx_BAP(GLOBAL_STATE, displayBufferBAP, sizeof(displayBufferBAP), 15);

@@ -61,10 +61,11 @@ esp_err_t SERIAL_set_baud(int baud)
 
 int SERIAL_send(uint8_t *data, int len, bool debug)
 {
+    if (debug){
     ESP_LOGI(TAG, "tx: ");
     prettyHex((unsigned char *)data, len);
     ESP_LOGI(TAG, "\n");
-   
+    }
     return uart_write_bytes(UART_NUM_1, (const char *)data, len);
 }
 

@@ -11,7 +11,7 @@
 #define BM1368_ASIC_DIFFICULTY 256
 
 #define BM1368_SERIALTX_DEBUG false
-#define BM1368_SERIALRX_DEBUG true
+#define BM1368_SERIALRX_DEBUG false
 #define BM1368_DEBUG_WORK false //causes insane amount of debug output
 #define BM1368_DEBUG_JOBS false //causes insane amount of debug output
 
