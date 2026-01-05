@@ -147,6 +147,9 @@ static esp_err_t test_core_voltage(GlobalState * GLOBAL_STATE)
 {
     uint16_t core_voltage = VCORE_get_voltage_mv(GLOBAL_STATE);
     ESP_LOGI(TAG, "Voltage: %u", core_voltage);
+    char display_vcore[16] = {0}; 
+    snprintf(display_vcore, sizeof(display_vcore),"VCORE: %u", core_voltage);
+    display_msg(display_vcore, GLOBAL_STATE);
 
     if (core_voltage > CORE_VOLTAGE_TARGET_MIN && core_voltage < CORE_VOLTAGE_TARGET_MAX) {
         return ESP_OK;
@@ -346,39 +349,52 @@ void self_test(void * pvParameters)
         return;
     }
 
-    //Run PSRAM test
+    //Run PSRAM test 
+
+    display_msg("TEST PSRAM", GLOBAL_STATE);
     if(test_psram(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "NO PSRAM on device!");
+        display_msg("NO PSRAM", GLOBAL_STATE);
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Run display tests
+    display_msg("TEST DISPLAY", GLOBAL_STATE);
     if (test_display(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Display test failed!");
+        display_msg("DISPLAY: NO DISPLAY?", GLOBAL_STATE);
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Run input tests
+    display_msg("TEST BUTTON", GLOBAL_STATE);
     if (test_input(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Input test failed!");
+        display_msg("INPUT:FAIL", GLOBAL_STATE);
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Run screen tests
+    display_msg("TEST SCREN", GLOBAL_STATE);
     if (test_screen(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Screen test failed!");
+        display_msg("DISPLAY:FAIL", GLOBAL_STATE);
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Init peripherals EMC2101 and INA260 (if present)
+    display_msg("TEST PERIPH", GLOBAL_STATE);
     if (test_init_peripherals(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Peripherals init failed!");
+        display_msg("PERIPH:FAIL", GLOBAL_STATE);
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
     //Voltage Regulator Testing
+    display_msg("TEST VR", GLOBAL_STATE);
     if (test_voltage_regulator(GLOBAL_STATE) != ESP_OK) {
         ESP_LOGE(TAG, "Voltage Regulator test failed!");
+        display_msg("VR:FAIL", GLOBAL_STATE);
         tests_done(GLOBAL_STATE, TESTS_FAILED);
     }
 
@@ -391,6 +407,8 @@ void self_test(void * pvParameters)
     // test for  temp continuity 
     float asic_temp = Thermal_get_chip_temp(GLOBAL_STATE);
     ESP_LOGI(TAG, "ASIC Temp: %.2f C", asic_temp);
+    char temp_display [16] = {0};
+    snprintf(temp_display, sizeof(temp_display), "TEMP: %f", asic_temp);
 
     // detect open circiut / no result
     if(asic_temp == -1.0 || asic_temp == 127.0){
@@ -485,6 +503,8 @@ void self_test(void * pvParameters)
      double sum = 0;
      double duration = 0;
      double hash_rate = 0;
+     uint16_t core_voltage = 0;
+     char hashrate_message [24] = {0};
 
     while(duration < 5){
         task_result * asic_result = (*GLOBAL_STATE->ASIC_functions.receive_result_fn)(GLOBAL_STATE);
@@ -498,8 +518,11 @@ void self_test(void * pvParameters)
             ESP_LOGI(TAG, "%f Gh/s  , duration %f",hash_rate, duration);
         }
         duration = (double) (esp_timer_get_time() - start) / 1000000;
-        uint16_t core_voltage = VCORE_get_voltage_mv(GLOBAL_STATE);
+        core_voltage = VCORE_get_voltage_mv(GLOBAL_STATE);
         ESP_LOGI(TAG, "Voltage: %u", core_voltage);
+        snprintf(hashrate_message, sizeof(hashrate_message), "HR: %.0f|V: %u", hash_rate, core_voltage);
+        display_msg(hashrate_message, GLOBAL_STATE);
+
     }
 
     ESP_LOGI(TAG, "Hashrate: %f", hash_rate);
@@ -513,10 +536,16 @@ void self_test(void * pvParameters)
 
     ESP_LOGI(TAG, "Hashrate: %.2f Gh/s, Expected: %.2f Gh/s", hash_rate, expected_hashrate_mhs);
 
-    if (hash_rate < expected_hashrate_mhs) {
-        display_msg("HASHRATE:FAIL", GLOBAL_STATE);
+    if (hash_rate < expected_hashrate_mhs && hash_rate> 0) {
+        snprintf(hashrate_message, sizeof(hashrate_message), "HR FAIL LOW: %.0f", hash_rate);
+        display_msg(hashrate_message, GLOBAL_STATE);
+        tests_done(GLOBAL_STATE, false);
+    }else if (expected_hashrate_mhs == 0)
+    {
+        display_msg("HASHRATE: 0 GH", GLOBAL_STATE);
         tests_done(GLOBAL_STATE, false);
     }
+    
 
     free(GLOBAL_STATE->ASIC_TASK_MODULE.active_jobs);
     free(GLOBAL_STATE->valid_jobs);
