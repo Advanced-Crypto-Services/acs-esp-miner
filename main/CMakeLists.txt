@@ -24,6 +24,8 @@ SRCS
     "./http_server/theme_api.c"
     "./database/dataBase.c"
     "./self_test/self_test.c"
+    "./self_test/self_test_server.c"
+
     "./tasks/stratum_task.c"
     "./tasks/create_jobs_task.c"
     "./tasks/asic_task.c"

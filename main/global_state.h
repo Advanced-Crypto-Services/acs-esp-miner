@@ -83,10 +83,27 @@ typedef struct
 
 typedef struct
 {
+    char name[24];
+    bool passed;
+    bool completed;
+    char detail[48];
+} SelfTestResult;
+
+#define SELF_TEST_MAX_RESULTS 12
+
+typedef struct
+{
     bool active;
     char *message;
     bool result;
     bool finished;
+    SelfTestResult results[SELF_TEST_MAX_RESULTS];
+    uint8_t result_count;
+    float hashrate;
+    float temperature;
+    uint16_t core_voltage;
+    bool init_complete;        /* true once init-phase tests pass */
+    uint8_t init_result_count; /* results from init phase to preserve */
 } SelfTestModule;
 
 
