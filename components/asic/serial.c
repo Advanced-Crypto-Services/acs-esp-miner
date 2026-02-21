@@ -27,7 +27,6 @@ static const char *TAG = "serial";
 esp_err_t SERIAL_init(void)
 {
     ESP_LOGI(TAG, "Initializing serial");
-    // Configure UART1 parameters
     uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -36,14 +35,14 @@ esp_err_t SERIAL_init(void)
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .rx_flow_ctrl_thresh = 122,
     };
-    // Configure UART1 parameters
     ESP_ERROR_CHECK_WITHOUT_ABORT(uart_param_config(UART_NUM_1, &uart_config));
-    // Set UART1 pins(TX: IO17, RX: I018)
     ESP_ERROR_CHECK_WITHOUT_ABORT(uart_set_pin(UART_NUM_1, ECHO_TEST_TXD, ECHO_TEST_RXD, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
-    // Install UART driver (we don't need an event queue here)
-    // tx buffer 0 so the tx time doesn't overlap with the job wait time
-    //  by returning before the job is written
+    if (uart_is_driver_installed(UART_NUM_1)) {
+        uart_flush(UART_NUM_1);
+        return ESP_OK;
+    }
+
     return uart_driver_install(UART_NUM_1, BUF_SIZE * 2, BUF_SIZE * 2, 0, NULL, 0);
 }
 
