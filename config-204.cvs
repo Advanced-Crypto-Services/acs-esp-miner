@@ -11,7 +11,7 @@ fbstratumurl,data,string,solo.ckpool.org
 fbstratumport,data,u16,3333
 fbstratumuser,data,string,bc1qa2500jc3cwjnklv4tdme4e6ascvvl5w8jezxlh.bitaxe
 fbstratumpass,data,string,x
-asicfrequency,data,u16,400
+asicfrequency,data,u16,100
 asicvoltage,data,u16,1200
 asicmodel,data,string,BM1366
 devicemodel,data,string,ultra
