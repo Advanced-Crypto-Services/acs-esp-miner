@@ -84,6 +84,7 @@ static esp_err_t test_fan_sense(GlobalState * GLOBAL_STATE)
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             fan_speed = EMC2101_get_fan_speed();
             break;
         default:
@@ -142,6 +143,7 @@ esp_err_t test_display(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             if (display_init(GLOBAL_STATE) != ESP_OK) {
                 display_msg("DISPLAY:FAIL", GLOBAL_STATE);
                 return ESP_FAIL;
@@ -167,6 +169,7 @@ esp_err_t test_input(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             if (input_init(NULL, reset_self_test) != ESP_OK) {
                 display_msg("INPUT:FAIL", GLOBAL_STATE);
                 return ESP_FAIL;
@@ -187,6 +190,7 @@ esp_err_t test_screen(GlobalState * GLOBAL_STATE) {
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             if (screen_start(GLOBAL_STATE) != ESP_OK) {
                 display_msg("SCREEN:FAIL", GLOBAL_STATE);
                 return ESP_FAIL;
@@ -221,6 +225,7 @@ esp_err_t test_voltage_regulator(GlobalState * GLOBAL_STATE) {
             gpio_set_level(GPIO_ASIC_ENABLE, 0);
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
         default:
     }
 
@@ -246,6 +251,7 @@ esp_err_t test_voltage_regulator(GlobalState * GLOBAL_STATE) {
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             break;
         default:
     }
@@ -265,6 +271,7 @@ esp_err_t test_init_peripherals(GlobalState * GLOBAL_STATE) {
             EMC2101_set_fan_speed(1);
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             ESP_RETURN_ON_ERROR(EMC2101_init(nvs_config_get_u16(NVS_CONFIG_INVERT_FAN_POLARITY, 1)), TAG, "EMC2101 init failed!");
             EMC2101_set_fan_speed(1);
             EMC2101_set_ideality_factor(EMC2101_IDEALITY_1_0319);
@@ -284,6 +291,7 @@ esp_err_t test_init_peripherals(GlobalState * GLOBAL_STATE) {
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
         default:
     }
 
@@ -474,6 +482,7 @@ void self_test(void * pvParameters)
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             if(hash_rate < HASHRATE_TARGET_GAMMA){
                 display_msg("HASHRATE:FAIL", GLOBAL_STATE);
                 tests_done(GLOBAL_STATE, TESTS_FAILED);
@@ -508,6 +517,7 @@ void self_test(void * pvParameters)
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
                 if (test_TPS546_power_consumption(POWER_CONSUMPTION_TARGET_GAMMA, POWER_CONSUMPTION_MARGIN) != ESP_OK) {
                     ESP_LOGE(TAG, "TPS546 Power Draw Failed, target %.2f", (float)POWER_CONSUMPTION_TARGET_GAMMA);
                     display_msg("POWER:FAIL", GLOBAL_STATE);
@@ -534,6 +544,7 @@ static void tests_done(GlobalState * GLOBAL_STATE, bool test_result)
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             GLOBAL_STATE->SELF_TEST_MODULE.result = test_result;
             GLOBAL_STATE->SELF_TEST_MODULE.finished = true;
             break;

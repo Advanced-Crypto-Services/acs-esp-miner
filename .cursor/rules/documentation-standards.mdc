@@ -1,0 +1,258 @@
+---
+description: "ACS Documentation Standards - Enforce comprehensive documentation for all code changes"
+globs: "**/*.c,**/*.h,**/*.md,docs/**/*"
+alwaysApply: true
+---
+
+# ACS Documentation Standards
+
+# Summary
+- All code changes MUST include corresponding documentation updates
+- Follow kernel-doc format for in-code documentation
+- Maintain external documentation in docs/ directory
+- Update both overview and module-specific documentation
+- Ensure documentation directory structure is maintained
+
+## 1. In-Code Documentation Requirements
+
+### Function Documentation (MANDATORY)
+- **Every public function** must have kernel-doc comments
+- **Every exported function** must be documented before implementation
+- **No function** should be committed without proper documentation
+
+```c
+/**
+ * function_name - brief description of what function does
+ * @param1: description of parameter 1
+ * @param2: description of parameter 2 (can be NULL if optional)
+ *
+ * Longer description explaining the purpose, behavior, and any
+ * important implementation details. Include timing requirements
+ * for embedded functions.
+ *
+ * Context: Describe when this function can be called (task context, ISR, etc.)
+ * Return: 0 on success, negative error code on failure
+ */
+```
+
+### Structure Documentation (MANDATORY)
+- **Every public struct** must be documented
+- **Every struct member** must have inline comments
+
+```c
+/**
+ * struct data_structure - brief description of structure purpose
+ * @member1: description of member 1
+ * @member2: description of member 2 with units if applicable
+ * @flags: bit flags for status (see FLAG_* constants)
+ *
+ * Detailed description of when and how this structure is used.
+ */
+struct data_structure {
+    uint32_t member1;        /* Member description with constraints */
+    int32_t member2;         /* Temperature in celsius * 100 */
+    uint32_t flags;          /* Status flags */
+};
+```
+
+### Module Header Documentation (MANDATORY)
+- **Every source file** must have a header comment
+- Include purpose, author, and dependencies
+
+```c
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Module Name - Brief module description
+ *
+ * Detailed description of what this module does, its responsibilities,
+ * and how it fits into the larger system. Include any hardware
+ * dependencies or timing requirements.
+ *
+ * Copyright (C) 2024 ACS Corporation
+ * Author: [Author Name] <[email]>
+ */
+```
+
+## 2. External Documentation Requirements
+
+### When Code Changes Occur:
+1. **New module added** → Create `docs/modules/module_name.md`
+2. **Module interface changed** → Update corresponding module documentation
+3. **System behavior changed** → Update `docs/overview.md`
+4. **New hardware support** → Update `docs/hardware/` documentation
+5. **API changes** → Update all affected documentation
+
+### Required External Documentation Structure:
+```
+docs/
+├── overview.md                    # MANDATORY: Project overview
+├── modules/                       # MANDATORY: Module documentation
+│   ├── sensor_module.md          # One file per module
+│   ├── wifi_module.md            
+│   └── communication_module.md   
+└── hardware/                     # MANDATORY for hardware projects
+    ├── schematic_notes.md        
+    └── pin_assignments.md        
+```
+
+### Module Documentation Template (MANDATORY):
+Every new module MUST have corresponding documentation in `docs/modules/`:
+
+```markdown
+# Module Name Implementation
+
+## Module Purpose
+- What specific function does this module serve?
+- How does it contribute to the overall system goals?
+
+## Module Interface
+### Public Functions
+- `module_init()` - Initialize module
+- `module_operation()` - Perform main operation
+- `module_cleanup()` - Clean up resources
+
+### Data Structures
+- `struct module_config` - Configuration parameters
+- `struct module_data` - Runtime data
+
+### Dependencies
+- List all module dependencies
+- Hardware requirements
+- Other software modules
+
+## Implementation Details
+### Variables and Data Sources
+- `module_state` - From initialization parameter
+- `last_operation_time` - From system timer
+- `error_count` - Internal error tracking
+
+### Integration Points
+- How this module interacts with others
+- Data flow in and out
+- Timing requirements
+```
+
+## 3. Documentation Update Triggers
+
+### ALWAYS update documentation when:
+- Adding new functions (update module docs)
+- Changing function signatures (update in-code and module docs)
+- Adding new modules (create module documentation)
+- Modifying system behavior (update overview)
+- Adding hardware features (update hardware docs)
+- Changing error codes (update error documentation)
+- Adding new APIs (update integration documentation)
+
+### Documentation Review Checklist:
+Before any code commit, verify:
+- [ ] All new functions have kernel-doc comments
+- [ ] All modified functions have updated documentation
+- [ ] Module documentation reflects current functionality
+- [ ] Overview documentation is current
+- [ ] Hardware documentation is updated (if applicable)
+- [ ] Integration points are documented
+- [ ] Error codes are documented
+
+## 4. Documentation Quality Standards
+
+### In-Code Documentation Quality:
+- **Be specific**: Include units, ranges, and constraints
+- **Include context**: When can this function be called?
+- **Document side effects**: What global state changes?
+- **Include examples**: For complex APIs
+- **Document thread safety**: Is this function reentrant?
+
+### External Documentation Quality:
+- **Keep current**: Update with every interface change
+- **Be comprehensive**: Cover all public interfaces
+- **Include examples**: Show actual usage patterns
+- **Document integration**: How modules work together
+- **Maintain structure**: Follow the directory organization
+
+## 5. Enforcement Rules
+
+### Code Review Requirements:
+- **No code merge** without corresponding documentation updates
+- **No new modules** without module documentation
+- **No API changes** without updated documentation
+- **Documentation must be reviewed** alongside code changes
+
+### Automatic Checks:
+- Verify docs/ directory structure exists
+- Check that new .c/.h files have corresponding documentation
+- Ensure module documentation exists for each component
+- Validate kernel-doc format compliance
+
+### Documentation Maintenance:
+- Update documentation BEFORE implementing changes
+- Remove documentation for deprecated features
+- Keep examples current and working
+- Maintain consistent terminology across all docs
+
+## 6. ESP32-Specific Documentation Requirements
+
+### Hardware Documentation:
+- Document GPIO pin assignments
+- Include timing requirements for peripherals
+- Document power consumption characteristics
+- Include schematic notes for complex circuits
+
+### Task Documentation:
+- Document task priorities and stack sizes
+- Include inter-task communication patterns
+- Document resource sharing and synchronization
+- Include performance characteristics
+
+### Error Handling Documentation:
+- Document all possible error codes
+- Include recovery procedures
+- Document error propagation patterns
+- Include debugging information
+
+## 7. Documentation File Organization
+
+### Naming Conventions:
+- Use `snake_case` for all documentation files
+- Module docs: `module_name.md`
+- Hardware docs: descriptive names like `pin_assignments.md`
+- Keep filenames short but clear
+
+### Content Organization:
+- Start with overview and purpose
+- Follow with interface documentation  
+- Include implementation details
+- End with integration and usage examples
+
+### Cross-References:
+- Link between related documentation files
+- Reference source code files from documentation
+- Include links to external specifications
+- Maintain bidirectional traceability
+
+## 8. Documentation Templates
+
+### Use these templates for consistency:
+
+**Function Documentation:**
+```c
+/**
+ * function_name - brief description
+ * @param: parameter description
+ *
+ * Detailed description including timing, constraints, and behavior.
+ *
+ * Context: When this can be called
+ * Return: What this returns and error codes
+ */
+```
+
+**Module Documentation:**
+```markdown
+# Module Name
+## Purpose
+## Interface  
+## Implementation
+## Integration
+```
+
+**Remember: Documentation is not optional - it's a core requirement for all code changes.**

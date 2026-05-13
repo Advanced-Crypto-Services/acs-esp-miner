@@ -85,6 +85,17 @@ esp_err_t NVSDevice_parse_config(GlobalState * GLOBAL_STATE) {
         GLOBAL_STATE->AUTOTUNE_MODULE.maxFrequency = 750;
         GLOBAL_STATE->AUTOTUNE_MODULE.minDomainVoltage = 950;   // quiet preset (1000mV) - 100mV
         GLOBAL_STATE->AUTOTUNE_MODULE.minFrequency = 420;       // quiet preset (400MHz) - 100MHz
+    } else if (strcmp(GLOBAL_STATE->device_model_str, "gammaduo") == 0) {
+        ESP_LOGI(TAG, "DEVICE: Gamma Duo");
+        GLOBAL_STATE->device_model = DEVICE_GAMMA_DUO;
+        GLOBAL_STATE->asic_count = 2;
+        GLOBAL_STATE->voltage_domain = 1;
+        GLOBAL_STATE->small_core_count = BM1370_SMALL_CORE_COUNT;
+        GLOBAL_STATE->AUTOTUNE_MODULE.maxPower = 35;
+        GLOBAL_STATE->AUTOTUNE_MODULE.maxDomainVoltage = 1220;
+        GLOBAL_STATE->AUTOTUNE_MODULE.maxFrequency = 650;
+        GLOBAL_STATE->AUTOTUNE_MODULE.minDomainVoltage = 950;   // quiet preset (1000mV) - 100mV
+        GLOBAL_STATE->AUTOTUNE_MODULE.minFrequency = 300;       // quiet preset (300MHz) - 100MHz
     } else {
         ESP_LOGE(TAG, "Invalid DEVICE model");
         // maybe should return here to now execute anything with a faulty device parameter !

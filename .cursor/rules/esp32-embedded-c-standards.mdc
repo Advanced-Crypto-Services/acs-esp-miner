@@ -1,0 +1,189 @@
+---
+description: "Embedded C (ESP32, ESP-IDF) coding & safety standard"
+globs: "**/*.c,**/*.h"
+alwaysApply: true
+---
+
+# ESP32/ESP-IDF Embedded C Coding & Safety Standards
+
+# Summary
+- Use style guidelines from linux kernel
+- prioritize readability over condensing using descriptive names
+- Use best practices when it comes to low-level embedded design. Focusing on Safety, Scalability, and Readability
+
+## 1. Baseline style — Linux kernel 4.10
+- **Tabs only, 8 columns; never indent with spaces**  
+- **Max 80-column line length**; break long lines cleanly, but don’t split grep-friendly strings  
+- **No trailing whitespace**; strip before commit  
+- `case` labels line up with their `switch`
+
+- **Braces (K&R style)**  
+  - Control blocks: opening brace on *same* line  
+  - Function defs: opening brace on *next* line  
+  - Closing brace alone on its line (except with `while` / `else`)  
+  - Omit braces for single-statement branches *unless* the sibling branch needs them (then keep both)
+
+- **Spaces**  
+  - One space after keywords `if`, `for`, `while`, after commas / semicolons  
+  - No space after unary operators (`sizeof`, `*`, `&`, `!`, etc.)  
+  - Pointer star hugs the **name** (`char *buf`)  
+  - Binary / ternary ops get spaces on both sides; unary ops don’t  
+  - Never pad inside parentheses or around `.` / `->`
+
+- **Line continuations**: indent wrapped lines clearly to the right (≥ one tab) and align parameters vertically in long prototypes
+
+- **Naming**  
+  - `snake_case` for funcs / vars; `ALL_CAPS` for macros / consts; avoid CamelCase  
+  - Struct and enum types: `snake_case` (no `_t` suffix)
+  - Predicate names (`is_empty`, `has_items`) return `bool`; verb / command names return error code (`int`)
+  - Global variables and functions need descriptive names with module prefixes for public APIs
+  - Public APIs need module prefixes (`sensor_module_init()`); avoid generic names (`init()`) in global scope 
+
+- **Functions**  
+  - Aim ≤ 50 LOC for simple functions, ≤ 100 LOC for complex algorithms; ≤ 3 nesting levels, ≤ 10 locals; split aggressively  
+  - Blank line between functions; immediately follow exported symbols with `EXPORT_SYMBOL`
+  - If cleanup is required before returning, use `goto`; for simple returns, return directly
+  - If the name of a function is an action or an imperative command,
+the function should return an error-code integer.  If the name
+is a predicate, the function should return a "succeeded" boolean.
+
+- **Comments**  
+  - Explain **what / why**, not **how**  
+  - Multi-line style: leading `*` aligned, use kernel-doc format for functions
+  - Limit comments to beginning of functions, not within function bodies
+  - Comment data types and complex structures
+
+- **Macros & enums**  
+  - Avoid macros if able
+  - Use enums for related constants; macros in `ALL_CAPS`  
+  - Wrap multi-statement macros with `do { … } while (0)`  
+  - Parenthesize every parameter in expression macros
+
+
+## 2. ESP-IDF refinements (only where they don't clash with §1)
+- Public symbols are namespace-prefixed (`mycomp_do_foo()`); file-local symbols are `static`.
+- In headers: `#pragma once`, then `#include`s, then `extern "C"` guards.
+- **Include order:** C-StdLib → POSIX → IDF → other components → this component → private.
+- Use `ESP_LOGx` macros for logging; never `printf` inside IDF tasks.
+- **TAG naming:** Use `MODULE_NAME` format (e.g., `static const char *TAG = "SENSOR_MODULE";`)
+- Always check ESP function returns: `esp_err_t ret = function(); if (ret != ESP_OK) { /* handle */ }`
+
+## 3. Memory-safe practices
+- **Do not emit** `malloc`, `calloc`, `realloc`, `free`, or C++ `new/delete` unless the user asks explicitly.
+- Prefer stack, global, or **static FreeRTOS APIs** (`xTaskCreateStatic`, `xQueueCreateStatic`, …).
+- Zero-initialise structs (designated initialisers or `memset`).
+
+
+## 4. Fixed-width types & portability
+- Always `#include <stdint.h>` (and `<stdbool.h>` when `bool` is used).
+- Use `uint8_t`, `int32_t`, etc. for *all* integral widths; only use `size_t` where size semantics matter.
+- **When existing code or a user prompt omits stdint types, ask:**
+  > "Could you clarify the intended width so I can replace `int/long` with a fixed-width type?"
+  Note that you must ask **every time** this happens.
+
+## 5. Concurrency & ISR hygiene
+- Shared data touched in ISRs **must** be `volatile` *or* protected with `portENTER_CRITICAL(&spinlock)`.
+- Never call blocking FreeRTOS APIs from ISRs; use the `…FromISR` variants and the
+  `BaseType_t xHigherPriorityTaskWoken` handshake.
+- Use `volatile` for simple ISR-shared data; use critical sections/mutexes for complex shared data.
+- Always use `portYIELD_FROM_ISR(xHigherPriorityTaskWoken)` after ISR FreeRTOS calls.
+- Keep ISRs minimal and fast; defer complex processing to tasks using notifications or queues.
+
+## 6. Error-handling & assertions
+- Functions that can fail return `esp_err_t`; success is `ESP_OK`.
+- Reduce boilerplate with `ESP_ERROR_CHECK()`, `ESP_RETURN_ON_ERROR()`, `ESP_RETURN_ON_FALSE()`, `ESP_GOTO_ON_ERROR()`.
+- Use `ESP_ERROR_CHECK()` for critical operations that should abort on failure.
+- Use `ESP_RETURN_ON_ERROR()` for clean error propagation with logging.
+- Use `assert()` only for unrecoverable internal logic errors.
+
+## 7. Module Encapsulation & Data Management
+- **Keep modules intact** - each module encapsulates its internal state and provides clean APIs
+- **No direct cross-module calls** to specific subsystems (e.g., no direct NVS calls in server.c)
+- **Use static variables and functions** for internal module state and operations
+- **Expose needed data through helper functions** rather than direct variable access
+- **For ESP32 embedded systems**, allow GLOBAL_STATE struct with pointer passing for system-wide state
+
+### Module Boundary Enforcement
+- ❌ **Forbidden**: Direct subsystem calls across modules
+  ```c
+  // Bad: server.c calling NVS directly
+  #include "nvs_flash.h"
+  nvs_set_str(handle, key, value);  // Violates module boundaries
+  ```
+- ✅ **Required**: Clean module APIs
+  ```c
+  // Good: server.c using config module API
+  #include "config_manager.h" 
+  config_save_string(key, value);  // Clean encapsulated API
+  ```
+
+### Static State Management
+- **All module state** should be `static` unless part of GLOBAL_STATE
+- **Use static helper functions** for internal operations
+- **Provide public accessor functions** for needed external access
+  ```c
+  // sensor_module.c - proper encapsulation
+  static struct sensor_state {
+      bool initialized;
+      uint16_t temperature;
+      int error_count;
+  } sensor_state = {0};
+  
+  static bool validate_reading(uint16_t temp) { /* internal helper */ }
+  
+  // Public API
+  int sensor_get_temperature(void) { return sensor_state.temperature; }
+  bool sensor_is_healthy(void) { return sensor_state.error_count < 3; }
+  ```
+
+### Global State Pattern for ESP32
+- **System-wide state** can use GLOBAL_STATE struct with pointer passing and mutex protection
+- **Pass pointer to functions** that need global state access
+- **Keep global state minimal** - prefer module-local static state when possible
+- **Always use mutex protection** for thread-safe access to global state
+- **Provide accessor functions** instead of direct structure access
+  ```c
+  struct global_state {
+      struct {
+          bool system_initialized;
+          char device_name[32];
+          uint16_t total_errors;
+      } system;
+      
+      SemaphoreHandle_t mutex;  // Required for thread safety
+      bool initialized;
+  };
+  
+  // Required: Thread-safe accessor functions
+  esp_err_t global_state_lock(TickType_t timeout);
+  void global_state_unlock(void);
+  bool global_state_is_operational(void);
+  
+  // Usage: Always lock before access
+  esp_err_t module_init(void) {
+      if (global_state_lock(1000) != ESP_OK) return ESP_ERR_TIMEOUT;
+      
+      struct global_state *state = global_state_get_handle();
+      if (state->system.system_initialized) { /* ... */ }
+      
+      global_state_unlock();
+      return ESP_OK;
+  }
+  ```
+
+### Code Review Enforcement
+- **Flag any direct subsystem includes** in wrong modules (nvs_flash.h in server.c, etc.)
+- **Require static keyword** for all module-internal variables and functions
+- **Require public accessor functions** instead of extern variable declarations
+- **Verify module APIs** provide complete functionality without exposing internals
+- **Check for clean module boundaries** - each .c file should have a clear responsibility
+- **Global state enforcement:**
+  - **Flag direct global variable access** - require accessor functions
+  - **Require mutex protection** for all global state access
+  - **Verify timeout handling** in global state lock operations
+  - **Check for proper lock/unlock pairing** in all functions
+  - **Ensure structured global state** - no loose global variables
+- **Module boundary violations:**
+  - **Block includes** like `#include "nvs_flash.h"` in non-storage modules
+  - **Require clean APIs** like `config_save_string()` instead of direct NVS calls
+  - **Flag extern declarations** for variables that should use accessor functions

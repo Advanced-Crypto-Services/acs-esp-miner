@@ -420,11 +420,9 @@ esp_err_t lvglUpdateDisplayMonitoringBAP(GlobalState *GLOBAL_STATE)
     // Send all chip temperatures and average
     size_t tempDataSize = (GLOBAL_STATE->asic_count * sizeof(float)) + sizeof(float);
     if (tempDataSize + 2 > MAX_BUFFER_SIZE_BAP) return ESP_ERR_NO_MEM;
-    float tempData[GLOBAL_STATE->asic_count + 1];
-    for (int i = 0; i < GLOBAL_STATE->asic_count; i++) {
-        tempData[i] = power->chip_temp[i];
-    }
-    tempData[GLOBAL_STATE->asic_count] = power->chip_temp_avg;
+    float tempData[2];
+    tempData[0] = power->chip_temp_avg;
+    tempData[1] = power->chip_temp_avg;
     
     ret = sendRegisterDataBAP(LVGL_REG_TEMPS, tempData, tempDataSize);
     if (ret != ESP_OK) return ret;

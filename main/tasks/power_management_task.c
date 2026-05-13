@@ -72,6 +72,13 @@ static const DevicePreset DEVICE_GAMMA_PRESETS[] = {
     {"turbo", 1160, 600, 95},       // Turbo: Maximum performance
 };
 
+// DEVICE_GAMMA_DUO presets
+static const DevicePreset DEVICE_GAMMA_DUO_PRESETS[] = {
+    {"quiet", 1060, 320, 25},        // Quiet: Low power, conservative
+    {"balanced", 1130, 490, 35},    // Balanced: Good performance/efficiency balance
+    {"turbo", 1160, 620, 95},       // Turbo: Maximum performance
+};
+
 // Simple function to apply a preset by name
 bool apply_preset(int device_model, const char* preset_name) {
     const DevicePreset* presets = NULL;
@@ -94,6 +101,10 @@ bool apply_preset(int device_model, const char* preset_name) {
         case DEVICE_GAMMA:
             presets = DEVICE_GAMMA_PRESETS;
             preset_count = sizeof(DEVICE_GAMMA_PRESETS) / sizeof(DevicePreset);
+            break;
+        case DEVICE_GAMMA_DUO:
+            presets = DEVICE_GAMMA_DUO_PRESETS;
+            preset_count = sizeof(DEVICE_GAMMA_DUO_PRESETS) / sizeof(DevicePreset);
             break;
         default:
             ESP_LOGI(TAG, "Unknown device model: %d", device_model);
@@ -444,6 +455,7 @@ static double automatic_fan_speed(float chip_temp, GlobalState * GLOBAL_STATE)
         case DEVICE_ULTRA:
         case DEVICE_SUPRA:
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             float perc = (float) result / 100;
             GLOBAL_STATE->POWER_MANAGEMENT_MODULE.fan_perc = perc;
             EMC2101_set_fan_speed( perc );
@@ -484,6 +496,7 @@ static void handle_hard_overheat_recovery(GlobalState * GLOBAL_STATE, const char
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             VCORE_set_voltage(0.0, GLOBAL_STATE);
             break;
         default:
@@ -543,6 +556,7 @@ static void handle_overheat_recovery(GlobalState * GLOBAL_STATE, const char* dev
             }
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             VCORE_set_voltage(0.0, GLOBAL_STATE);
             break;
         default:
@@ -638,6 +652,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
 			}
             break;
         case DEVICE_GAMMA:
+        case DEVICE_GAMMA_DUO:
             break;
         default:
     }
@@ -669,6 +684,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
             
                 break;
             case DEVICE_GAMMA:
+            case DEVICE_GAMMA_DUO:
                     power_management->voltage = TPS546_get_vin() * 1000;
                     power_management->current = TPS546_get_iout() * 1000;
                     // calculate regulator power (in milliwatts)
@@ -753,6 +769,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
 
                 break;
             case DEVICE_GAMMA:
+            case DEVICE_GAMMA_DUO:
                 power_management->chip_temp_avg = GLOBAL_STATE->ASIC_initalized ? EMC2101_get_external_temp() : -1;
                 power_management->vr_temp = (float)TPS546_get_temperature();
 
@@ -801,6 +818,7 @@ void POWER_MANAGEMENT_task(void * pvParameters)
                 case DEVICE_ULTRA:
                 case DEVICE_SUPRA:
                 case DEVICE_GAMMA:
+                case DEVICE_GAMMA_DUO:
 
                     float fs = (float) nvs_config_get_u16(NVS_CONFIG_FAN_SPEED, 100);
                     power_management->fan_perc = fs;
